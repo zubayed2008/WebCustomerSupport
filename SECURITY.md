@@ -47,6 +47,10 @@ This project applies the OWASP ASVS-style controls below. Security-relevant beha
 - Containers run as a non-root user; PostgreSQL and file volumes are separate.
 - Dependency updates and container image builds run in CI. Add secret scanning and image scanning before production use.
 
+## Local demonstration credentials
+
+The README publishes the throwaway passwords used by this machine's local `.env` so the demonstration can be reproduced. Treat them as compromised the moment they are committed. Rotate every password in `.env` before any shared, client-facing, or production use, then recreate the stack so the database and seeded users are rebuilt. Real environments must supply secrets through a secret manager or platform secret store, never through documentation.
+
 ## Known limitations for production hardening
 
 - Inbound email parsing, multi-tenancy, and email address verification are post-MVP.

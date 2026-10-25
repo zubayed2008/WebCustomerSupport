@@ -85,11 +85,31 @@ Open `http://localhost:8080` and sign in with `SUPPORTDESK_ADMIN_EMAIL` and `SUP
 
 Never commit `.env`. Use unique long random values for every password, and change them before exposing the stack to anyone outside your machine.
 
+### Local demonstration accounts
+
+The values below are the **local-only demo credentials** currently used by this machine's ignored `.env` file. They are published here only so the demonstration can be reproduced. They must never be used outside a local machine.
+
+| Role | Email | Password | Controlled by |
+|---|---|---|---|
+| Administrator | `admin@example.com` | `Admin!Passw0rd#2026` | `SUPPORTDESK_ADMIN_PASSWORD` |
+| Manager | `manager@example.com` | `Demo!Passw0rd#2026` | `SUPPORTDESK_DEMO_PASSWORD` |
+| Agent | `agent@example.com` | `Demo!Passw0rd#2026` | `SUPPORTDESK_DEMO_PASSWORD` |
+| Customer | `customer@example.com` | `Demo!Passw0rd#2026` | `SUPPORTDESK_DEMO_PASSWORD` |
+
+The PostgreSQL superuser for the local container is `supportdesk` / `Postgres!Passw0rd#2026`, controlled by `POSTGRES_PASSWORD`.
+
+Because the README is public, treat these passwords as compromised as soon as they are committed. Before any client-facing or shared environment, replace all of them in `.env`, then recreate the stack so the database and seeded users are rebuilt with the new secrets:
+
+```bash
+docker compose down -v
+docker compose up --build -d
+```
+
 Useful commands:
 
 ```bash
 docker compose logs -f api worker
-docker compose exec api dotnet SupportDesk.Api.dll --seed-demo
+docker compose ps
 docker compose down
 docker compose down -v   # destructive: removes database and file volumes
 ```
