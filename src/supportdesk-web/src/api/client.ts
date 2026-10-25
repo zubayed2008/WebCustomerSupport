@@ -80,7 +80,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       // Non-JSON error responses are reported with the status only.
     }
 
-    throw new ApiError(response.status, title, detail)
+    // Prefer the specific detail (for example a temporary lockout) so users are
+    // not left guessing why a valid sign-in was rejected.
+    throw new ApiError(response.status, detail ?? title, detail)
   }
 
   if (response.status === 204) {

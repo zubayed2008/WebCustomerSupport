@@ -66,6 +66,30 @@ WHERE "Status" = 'Failed';
 - Replace the in-memory limiter with a distributed implementation before running multiple API replicas behind a load balancer.
 - The worker uses database leases for outbox messages, so multiple worker replicas can run safely, but keep the batch size conservative.
 
+## Account lockout and sign-in problems
+
+ASP.NET Core Identity locks an account for 15 minutes after five failed sign-in attempts. While locked, even the correct password returns `401` with the message “The account is temporarily locked. Try again later.”
+
+Recovery options:
+
+1. Wait 15 minutes and sign in again.
+2. As an administrator, open **Administration → Users** and use **Reset password**. A password reset also clears the lockout and the failed-attempt counter. Reactivating a deactivated user clears the lockout too.
+3. Directly in the database during local development:
+
+```sql
+UPDATE "AspNetUsers"
+SET "LockoutEnd" = NULL, "AccessFailedCount" = 0
+WHERE "Email" = 'customer@example.com';
+```
+
+Run it through the container:
+
+```bash
+docker compose exec -T postgres psql -U supportdesk -d supportdesk -c "update \"AspNetUsers\" set \"LockoutEnd\"=null, \"AccessFailedCount\"=0 where \"Email\"='customer@example.com';"
+```
+
+If a sign-in fails while the account is not locked, confirm that the account exists (`SUPPORTDESK_DEMO_PASSWORD` must be set for the demo users to be seeded), that it is active, and that the password matches the value in `.env`. Demo users are seeded only when the database is created; after changing `.env`, recreate the stack with `docker compose down -v` and `docker compose up --build -d`.
+
 ## Incident checklist
 
 1. Check `docker compose ps` and `/health/ready`.

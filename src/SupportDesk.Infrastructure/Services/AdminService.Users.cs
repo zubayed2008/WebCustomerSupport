@@ -43,6 +43,12 @@ public sealed partial class AdminService
         {
             await _userManager.UpdateSecurityStampAsync(user);
         }
+        else
+        {
+            // Reactivating an account clears any lockout so the user can sign in.
+            await _userManager.SetLockoutEndDateAsync(user, null);
+            await _userManager.ResetAccessFailedCountAsync(user);
+        }
 
         await _audit.WriteAsync(_currentUser.UserId, "user.update", nameof(ApplicationUser), user.Id.ToString(), new { user.Email, user.IsActive, Roles = requestedRoles }, cancellationToken);
         return await MapUserAsync(user);
@@ -55,6 +61,11 @@ public sealed partial class AdminService
             ?? throw new NotFoundException("User not found.");
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
         EnsureIdentitySuccess(await _userManager.ResetPasswordAsync(user, token, newPassword));
+
+        // A password reset is the administrator recovery path, so it also clears
+        // any lockout from failed sign-in attempts.
+        await _userManager.SetLockoutEndDateAsync(user, null);
+        await _userManager.ResetAccessFailedCountAsync(user);
         await _userManager.UpdateSecurityStampAsync(user);
         await _audit.WriteAsync(_currentUser.UserId, "user.password-reset", nameof(ApplicationUser), user.Id.ToString(), null, cancellationToken);
     }

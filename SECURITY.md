@@ -1,4 +1,3 @@
-# Security Notes
 
 This project applies the OWASP ASVS-style controls below. Security-relevant behavior is covered by tests where practical.
 

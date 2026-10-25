@@ -108,6 +108,44 @@ public sealed class SecurityTests : IClassFixture<SupportDeskApiFactory>
     }
 
     [Fact]
+    public async Task LockedAccount_ReportsLockoutAndAdministratorCanUnlock()
+    {
+        using var admin = new ApiSession(_factory);
+        await admin.LoginAndEnsureSuccessAsync(SupportDeskApiFactory.AdminEmail, SupportDeskApiFactory.AdminPassword);
+
+        var createResponse = await admin.PostAsync("/api/v1/admin/users", new
+        {
+            email = "locktest@test.local",
+            password = "LockTest!Pass123",
+            displayName = "Lock Test",
+            roles = new[] { "Customer" },
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var userId = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync()).RootElement.GetProperty("id").GetString();
+
+        // Five failed attempts trigger the configured lockout.
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            using var failing = new ApiSession(_factory);
+            var failed = await failing.LoginAsync("locktest@test.local", "Wrong!Pass123");
+            Assert.Equal(HttpStatusCode.Unauthorized, failed.StatusCode);
+        }
+
+        using var locked = new ApiSession(_factory);
+        var lockedResponse = await locked.LoginAsync("locktest@test.local", "LockTest!Pass123");
+        var lockedBody = await lockedResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.Unauthorized, lockedResponse.StatusCode);
+        Assert.Contains("locked", lockedBody, StringComparison.OrdinalIgnoreCase);
+
+        // The administrator recovery path clears the lockout and sets a new password.
+        var resetResponse = await admin.PostAsync($"/api/v1/admin/users/{userId}/password", new { newPassword = "Unlocked!Pass123" });
+        Assert.Equal(HttpStatusCode.NoContent, resetResponse.StatusCode);
+
+        using var recovered = new ApiSession(_factory);
+        await recovered.LoginAndEnsureSuccessAsync("locktest@test.local", "Unlocked!Pass123");
+    }
+
+    [Fact]
     public async Task DynamicRolePermission_GrantsAccessWithoutRedeployment()
     {
         using var admin = new ApiSession(_factory);
