@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { downloadAttachment, uploadAttachment } from '../api/client'
 import type { TicketDetail } from '../api/types'
+import { formatFileSize } from '../utils/format'
 
 interface Props {
   ticket: TicketDetail
@@ -26,7 +27,7 @@ export default function TicketAttachments({ ticket, onChanged, onError }: Props)
   return (
     <section className="card">
       <h2>Attachments</h2>
-      <ul>
+      <ul className="attachment-list">
         {ticket.attachments.map((attachment) => (
           <li key={attachment.id}>
             <button
@@ -36,7 +37,7 @@ export default function TicketAttachments({ ticket, onChanged, onError }: Props)
             >
               {attachment.fileName}
             </button>
-            <span className="muted small"> ({Math.round(attachment.sizeBytes / 1024)} KB)</span>
+            <span className="muted small">{formatFileSize(attachment.sizeBytes)}</span>
           </li>
         ))}
         {ticket.attachments.length === 0 ? <li className="muted">No attachments.</li> : null}

@@ -47,9 +47,14 @@ export default function NewTicketPage() {
 
   return (
     <div>
-      <h1>Create a ticket</h1>
-      {error ? <div className="alert error">{error}</div> : null}
-      <form className="card form" onSubmit={submit}>
+      <div className="page-header">
+        <div>
+          <h1>Create a ticket</h1>
+          <p className="page-subtitle">Describe the issue so the support team can respond quickly.</p>
+        </div>
+      </div>
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
+      <form className="card form narrow" onSubmit={submit}>
         <label>
           Subject
           <input value={subject} required maxLength={200} onChange={(event) => setSubject(event.target.value)} />
@@ -79,7 +84,7 @@ export default function NewTicketPage() {
           Tags (comma separated)
           <input value={tags} maxLength={200} onChange={(event) => setTags(event.target.value)} placeholder="login, urgent" />
         </label>
-        <div className="row-actions">
+        <div className="form-actions">
           <button type="submit" className="button primary" disabled={busy}>{busy ? 'Creating…' : 'Create ticket'}</button>
           <button type="button" className="button" onClick={() => navigate(-1)}>Cancel</button>
         </div>

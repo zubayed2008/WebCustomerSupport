@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { apiRequest } from '../api/client'
 import type { PagedResult, Role, UserSummary } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import Modal from './Modal'
+import { formatDate } from '../utils/format'
 
 export default function AdminUsers() {
   const { can } = useAuth()
@@ -9,10 +11,16 @@ export default function AdminUsers() {
   const [roles, setRoles] = useState<Role[]>([])
   const [search, setSearch] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [newRoles, setNewRoles] = useState<string[]>(['Customer'])
+  const [roleTarget, setRoleTarget] = useState<UserSummary | null>(null)
+  const [roleDraft, setRoleDraft] = useState<string[]>([])
+  const [passwordTarget, setPasswordTarget] = useState<UserSummary | null>(null)
+  const [nextPassword, setNextPassword] = useState('')
+  const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -36,77 +44,100 @@ export default function AdminUsers() {
 
   const create = async (event: FormEvent) => {
     event.preventDefault()
+    setBusy(true)
     try {
       await apiRequest('/admin/users', { method: 'POST', body: { email, displayName, password, roles: newRoles } })
       setEmail('')
       setDisplayName('')
       setPassword('')
+      setNotice(`User ${email} created.`)
+      setError(null)
       await load()
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Unable to create the user.')
+    } finally {
+      setBusy(false)
     }
   }
 
-  const save = async (user: UserSummary, changes: { displayName?: string; isActive?: boolean; roles?: string[] }) => {
+  const save = async (user: UserSummary, changes: { isActive?: boolean; roles?: string[] }) => {
     try {
       await apiRequest(`/admin/users/${user.id}`, {
         method: 'PUT',
-        body: {
-          displayName: changes.displayName ?? user.displayName,
-          isActive: changes.isActive ?? user.isActive,
-          roles: changes.roles ?? user.roles,
-        },
+        body: { displayName: user.displayName, isActive: changes.isActive ?? user.isActive, roles: changes.roles ?? user.roles },
       })
+      setError(null)
       await load()
+      return true
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Unable to update the user.')
+      return false
     }
   }
 
-  const editRoles = async (user: UserSummary) => {
-    const available = roles.map((role) => role.name).join(', ')
-    const value = window.prompt(`Roles for ${user.email} (comma separated). Available: ${available}`, user.roles.join(', '))
-    if (value === null) {
-      return
+  const toggleActive = async (user: UserSummary) => {
+    setNotice(null)
+    if (await save(user, { isActive: !user.isActive })) {
+      setNotice(user.isActive
+        ? `${user.email} deactivated.`
+        : `${user.email} reactivated. Any sign-in lockout and failed-attempt counters were cleared.`)
     }
-
-    await save(user, { roles: value.split(',').map((item) => item.trim()).filter(Boolean) })
   }
 
-  const resetPassword = async (user: UserSummary) => {
-    const next = window.prompt(`New password for ${user.email} (minimum 12 characters):`)
-    if (!next) {
-      return
+  const submitRoles = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!roleTarget) return
+    setBusy(true)
+    const saved = await save(roleTarget, { roles: roleDraft })
+    setBusy(false)
+    if (saved) {
+      setNotice(`Roles updated for ${roleTarget.email}.`)
+      setRoleTarget(null)
     }
+  }
 
+  const submitPassword = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!passwordTarget) return
+    setBusy(true)
     try {
-      await apiRequest(`/admin/users/${user.id}/password`, { method: 'POST', body: { newPassword: next } })
+      await apiRequest(`/admin/users/${passwordTarget.id}/password`, { method: 'POST', body: { newPassword: nextPassword } })
+      setNotice(`Password reset for ${passwordTarget.email}. The account is unlocked and can sign in with the new password.`)
       setError(null)
+      setPasswordTarget(null)
+      setNextPassword('')
     } catch (exception) {
       setError(exception instanceof Error ? exception.message : 'Unable to reset the password.')
+    } finally {
+      setBusy(false)
     }
   }
 
   return (
+    <>
     <section className="card">
-      <div className="page-header">
-        <h2>Users</h2>
+      <div className="card-header">
+        <div>
+          <h2>Users</h2>
+          <p className="card-description">Manage access, roles, and account recovery.</p>
+        </div>
         <form className="inline-form" onSubmit={(event) => { event.preventDefault(); void load() }}>
-          <input value={search} maxLength={100} placeholder="Search users" onChange={(event) => setSearch(event.target.value)} />
+          <input value={search} maxLength={100} placeholder="Search users" aria-label="Search users" onChange={(event) => setSearch(event.target.value)} />
           <button type="submit" className="button">Search</button>
         </form>
       </div>
 
-      {error ? <div className="alert error">{error}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
+      {notice ? <div className="alert success" role="status">{notice}</div> : null}
 
       {can('users.manage') ? (
         <form className="form" onSubmit={create}>
           <h3>Create user</h3>
-          <div className="form-row">
+          <div className="form-grid">
             <label>Email<input type="email" value={email} required maxLength={256} onChange={(event) => setEmail(event.target.value)} /></label>
             <label>Display name<input value={displayName} required maxLength={150} onChange={(event) => setDisplayName(event.target.value)} /></label>
+            <label>Temporary password<input type="password" value={password} required minLength={12} maxLength={200} autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} /></label>
           </div>
-          <label>Temporary password<input type="password" value={password} required minLength={12} maxLength={200} onChange={(event) => setPassword(event.target.value)} /></label>
           <fieldset>
             <legend>Roles</legend>
             {roles.map((role) => (
@@ -122,38 +153,89 @@ export default function AdminUsers() {
               </label>
             ))}
           </fieldset>
-          <button type="submit" className="button primary">Create user</button>
+          <div className="form-actions">
+            <button type="submit" className="button primary" disabled={busy}>Create user</button>
+          </div>
         </form>
       ) : null}
-
-      <table className="table">
-        <thead>
-          <tr><th>Email</th><th>Name</th><th>Active</th><th>Roles</th><th>Created</th><th /></tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.email}</td>
-              <td>{user.displayName}</td>
-              <td>{user.isActive ? 'Yes' : 'No'}</td>
-              <td>{user.roles.join(', ')}</td>
-              <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-              <td className="row-actions">
-                {can('users.manage') ? (
-                  <>
-                    <button type="button" className="button small" onClick={() => save(user, { isActive: !user.isActive })}>
-                      {user.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button type="button" className="button small" onClick={() => editRoles(user)}>Set roles</button>
-                    <button type="button" className="button small" onClick={() => resetPassword(user)}>Reset password</button>
-                  </>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="muted small">Role changes are applied per user through the API; use the role editor to change granted permissions.</p>
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr><th>Email</th><th>Name</th><th>Status</th><th>Roles</th><th>Created</th><th><span className="muted">Actions</span></th></tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td className="cell-title">{user.email}</td>
+                <td>{user.displayName}</td>
+                <td><span className={`pill ${user.isActive ? 'success' : 'neutral'}`}>{user.isActive ? 'Active' : 'Inactive'}</span></td>
+                <td>
+                  <div className="row-actions wrap">
+                    {user.roles.map((role) => <span key={role} className="pill neutral">{role}</span>)}
+                  </div>
+                </td>
+                <td>{formatDate(user.createdAt)}</td>
+                <td className="cell-actions">
+                  {can('users.manage') ? (
+                    <div className="row-actions">
+                      <button type="button" className="button small" onClick={() => void toggleActive(user)}>
+                        {user.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button type="button" className="button small" onClick={() => { setRoleTarget(user); setRoleDraft(user.roles); setNotice(null) }}>Set roles</button>
+                      <button type="button" className="button small" onClick={() => { setPasswordTarget(user); setNextPassword(''); setNotice(null) }}>Reset password</button>
+                    </div>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+            {users.length === 0 ? <tr><td colSpan={6}><div className="empty-state">No users found.</div></td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted small">Resetting a password or reactivating an account also clears sign-in lockouts.</p>
     </section>
+
+    {roleTarget ? (
+      <Modal title={`Roles for ${roleTarget.displayName}`} description={roleTarget.email} onClose={() => setRoleTarget(null)}>
+        <form className="form" onSubmit={submitRoles}>
+          <fieldset>
+            <legend>Assigned roles</legend>
+            {roles.map((role) => (
+              <label key={role.id} className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={roleDraft.includes(role.name)}
+                  onChange={(event) => setRoleDraft((current) => event.target.checked
+                    ? [...current, role.name]
+                    : current.filter((value) => value !== role.name))}
+                />
+                {role.name}
+              </label>
+            ))}
+          </fieldset>
+          <div className="form-actions">
+            <button type="submit" className="button primary" disabled={busy}>Save roles</button>
+            <button type="button" className="button" onClick={() => setRoleTarget(null)}>Cancel</button>
+          </div>
+        </form>
+      </Modal>
+    ) : null}
+
+    {passwordTarget ? (
+      <Modal title="Reset password" description={`${passwordTarget.email} · unlocks the account and clears failed sign-in attempts.`} onClose={() => setPasswordTarget(null)}>
+        <form className="form" onSubmit={submitPassword}>
+          <label>
+            New password
+            <input type="password" value={nextPassword} required minLength={12} maxLength={200} autoComplete="new-password" onChange={(event) => setNextPassword(event.target.value)} />
+          </label>
+          <p className="muted small">Minimum 12 characters. Share the temporary password through a secure channel.</p>
+          <div className="form-actions">
+            <button type="submit" className="button primary" disabled={busy}>{busy ? 'Resetting…' : 'Reset password'}</button>
+            <button type="button" className="button" onClick={() => setPasswordTarget(null)}>Cancel</button>
+          </div>
+        </form>
+      </Modal>
+    ) : null}
+    </>
   )
 }

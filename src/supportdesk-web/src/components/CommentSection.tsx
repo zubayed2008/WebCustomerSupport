@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { apiRequest, downloadAttachment } from '../api/client'
 import type { TicketDetail } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { formatDateTime } from '../utils/format'
 
 interface Props {
   ticket: TicketDetail
@@ -36,17 +37,17 @@ export default function CommentSection({ ticket, onChanged, onError }: Props) {
       <ul className="list">
         {ticket.comments.map((comment) => (
           <li key={comment.id} className={comment.visibility === 'Internal' ? 'list-item column internal' : 'list-item column'}>
-            <div className="row-actions wrap">
+            <div className="comment-meta">
               <strong>{comment.authorName}</strong>
               <span className={`pill ${comment.visibility === 'Internal' ? 'warning' : 'status-open'}`}>
                 {comment.visibility === 'Internal' ? 'Internal note' : 'Public reply'}
               </span>
               {comment.isFirstResponse ? <span className="pill">First response</span> : null}
-              <span className="muted small">{new Date(comment.createdAt).toLocaleString()}</span>
+              <span className="muted small">{formatDateTime(comment.createdAt)}</span>
             </div>
-            <p className="preserve-lines">{comment.body}</p>
+            <p className="preserve-lines comment-body">{comment.body}</p>
             {comment.attachments.length > 0 ? (
-              <ul>
+              <ul className="attachment-list">
                 {comment.attachments.map((attachment) => (
                   <li key={attachment.id}>
                     <button
@@ -62,7 +63,7 @@ export default function CommentSection({ ticket, onChanged, onError }: Props) {
             ) : null}
           </li>
         ))}
-        {ticket.comments.length === 0 ? <li className="muted">No comments yet.</li> : null}
+        {ticket.comments.length === 0 ? <li className="empty-state">No comments yet. Start the conversation below.</li> : null}
       </ul>
 
       {can('tickets.reply') ? (
@@ -77,9 +78,11 @@ export default function CommentSection({ ticket, onChanged, onError }: Props) {
               Internal note (hidden from the customer)
             </label>
           ) : null}
+          <div className="form-actions">
           <button type="submit" className="button primary" disabled={busy}>
             {busy ? 'Sending…' : isInternal ? 'Add internal note' : 'Send reply'}
           </button>
+        </div>
         </form>
       ) : null}
     </section>

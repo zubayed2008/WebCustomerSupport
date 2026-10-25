@@ -31,7 +31,10 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <form className="card login-card" onSubmit={submit}>
-        <h1>Support Desk</h1>
+        <div className="login-brand">
+          <span className="brand-mark">SD</span>
+          <h1>Support Desk</h1>
+        </div>
         <p className="muted">Sign in with the account created by your administrator.</p>
         {error ? <div className="alert error" role="alert">{error}</div> : null}
         <label>
@@ -42,6 +45,7 @@ export default function LoginPage() {
             autoComplete="username"
             required
             maxLength={256}
+            placeholder="you@example.com"
             onChange={(event) => setEmail(event.target.value)}
           />
         </label>
@@ -53,6 +57,7 @@ export default function LoginPage() {
             autoComplete="current-password"
             required
             maxLength={200}
+            placeholder="Your password"
             onChange={(event) => setPassword(event.target.value)}
           />
         </label>
@@ -60,7 +65,7 @@ export default function LoginPage() {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
         <p className="muted small">
-          Self-registration is disabled. An administrator grants roles and permissions.
+          Self-registration is disabled. If your account is locked, an administrator can reset your password to restore access.
         </p>
       </form>
     </div>

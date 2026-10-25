@@ -52,6 +52,7 @@ export default function SlaPolicies({ policies, calendars, onChanged, onError }:
   return (
     <section className="card">
       <h2>SLA policies</h2>
+      <div className="table-wrap">
       <table className="table">
         <thead>
           <tr><th>Name</th><th>Priority</th><th>First response</th><th>Resolution</th><th>Due soon</th><th>Calendar</th><th>Active</th></tr>
@@ -70,6 +71,7 @@ export default function SlaPolicies({ policies, calendars, onChanged, onError }:
           ))}
         </tbody>
       </table>
+      </div>
 
       {can('sla.manage') ? (
         <form className="form" onSubmit={save}>

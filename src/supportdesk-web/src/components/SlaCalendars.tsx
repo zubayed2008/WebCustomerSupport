@@ -50,6 +50,7 @@ export default function SlaCalendars({ calendars, onChanged, onError }: Props) {
             <span className="muted small">Holidays: {calendar.holidays.length}</span>
           </li>
         ))}
+        {calendars.length === 0 ? <li className="empty-state">No business calendars configured.</li> : null}
       </ul>
 
       {can('sla.manage') ? (

@@ -41,15 +41,19 @@ export default function AdminPermissions() {
   return (
     <section className="card">
       <h2>Permissions</h2>
+      <p className="muted small">System permissions are enforced by endpoints. Custom permissions can be granted to roles immediately.</p>
       {error ? <div className="alert error">{error}</div> : null}
       {groups.map((groupName) => (
         <div key={groupName}>
           <h3>{groupName}</h3>
-          <ul>
+          <ul className="list">
             {permissions.filter((permission) => permission.group === groupName).map((permission) => (
-              <li key={permission.id}>
-                <code>{permission.name}</code>
-                <span className="muted small"> — {permission.description}{permission.isSystem ? ' (system)' : ' (custom)'}</span>
+              <li key={permission.id} className="list-item">
+                <div>
+                  <code>{permission.name}</code>
+                  <div className="muted small">{permission.description}</div>
+                </div>
+                <span className={`pill ${permission.isSystem ? 'neutral' : 'success'}`}>{permission.isSystem ? 'System' : 'Custom'}</span>
               </li>
             ))}
           </ul>
@@ -62,12 +66,14 @@ export default function AdminPermissions() {
           <p className="muted small">
             Custom permissions can be granted to roles immediately. Endpoint enforcement still requires application code to check the new name.
           </p>
-          <div className="form-row">
+          <div className="form-grid">
             <label>Name<input value={name} required maxLength={100} placeholder="reports.export" onChange={(event) => setName(event.target.value)} /></label>
             <label>Group<input value={group} required maxLength={100} onChange={(event) => setGroup(event.target.value)} /></label>
           </div>
           <label>Description<input value={description} required maxLength={500} onChange={(event) => setDescription(event.target.value)} /></label>
-          <button type="submit" className="button primary">Create permission</button>
+          <div className="form-actions">
+            <button type="submit" className="button primary">Create permission</button>
+          </div>
         </form>
       ) : null}
     </section>

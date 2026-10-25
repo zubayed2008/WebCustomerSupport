@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiRequest } from '../api/client'
 import type { ReportOverview } from '../api/types'
+import { formatLabel } from '../utils/format'
 
 export default function DashboardPage() {
   const [overview, setOverview] = useState<ReportOverview | null>(null)
@@ -15,18 +16,24 @@ export default function DashboardPage() {
   }, [])
 
   if (loading) {
-    return <p>Loading dashboard…</p>
+    return <p className="loading">Loading dashboard…</p>
   }
 
   if (!overview) {
-    return <div className="alert error">{error ?? 'Unable to load the dashboard.'}</div>
+    return <div className="alert error" role="alert">{error ?? 'Unable to load the dashboard.'}</div>
   }
 
   const maxTrend = Math.max(1, ...overview.volumeTrend.map((point) => Math.max(point.created, point.resolved)))
 
   return (
     <div>
-      <h1>Operational dashboard</h1>
+      <div className="page-header">
+        <div>
+          <h1>Operational dashboard</h1>
+          <p className="page-subtitle">Queue health, service-level risk, and team workload at a glance.</p>
+        </div>
+      </div>
+
       <div className="metric-grid">
         <div className="metric card"><span>Open tickets</span><strong>{overview.openTickets}</strong></div>
         <div className="metric card"><span>Unassigned</span><strong>{overview.unassignedTickets}</strong></div>
@@ -39,44 +46,50 @@ export default function DashboardPage() {
 
       <div className="two-column">
         <section className="card">
-          <h2>By status</h2>
-          <table className="table">
-            <tbody>
-              {overview.byStatus.map((metric) => (
-                <tr key={metric.label}><td>{metric.label}</td><td>{metric.count}</td></tr>
-              ))}
-            </tbody>
-          </table>
+          <h2>Tickets by status</h2>
+          <div className="table-wrap">
+            <table className="table compact">
+              <tbody>
+                {overview.byStatus.map((metric) => (
+                  <tr key={metric.label}><td>{formatLabel(metric.label)}</td><td style={{ textAlign: 'right' }}><strong>{metric.count}</strong></td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
         <section className="card">
-          <h2>By priority</h2>
-          <table className="table">
-            <tbody>
-              {overview.byPriority.map((metric) => (
-                <tr key={metric.label}><td>{metric.label}</td><td>{metric.count}</td></tr>
-              ))}
-            </tbody>
-          </table>
+          <h2>Tickets by priority</h2>
+          <div className="table-wrap">
+            <table className="table compact">
+              <tbody>
+                {overview.byPriority.map((metric) => (
+                  <tr key={metric.label}><td>{metric.label}</td><td style={{ textAlign: 'right' }}><strong>{metric.count}</strong></td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
 
       <section className="card">
         <h2>Agent workload</h2>
-        <table className="table">
-          <thead>
-            <tr><th>Agent</th><th>Active</th><th>Due soon</th><th>Overdue</th></tr>
-          </thead>
-          <tbody>
-            {overview.agentWorkload.map((agent) => (
-              <tr key={agent.agentId ?? 'unassigned'}>
-                <td>{agent.agentName}</td>
-                <td>{agent.activeTickets}</td>
-                <td>{agent.dueSoon}</td>
-                <td>{agent.overdue}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr><th>Agent</th><th>Active</th><th>Due soon</th><th>Overdue</th></tr>
+            </thead>
+            <tbody>
+              {overview.agentWorkload.map((agent) => (
+                <tr key={agent.agentId ?? 'unassigned'}>
+                  <td className="cell-title">{agent.agentName}</td>
+                  <td>{agent.activeTickets}</td>
+                  <td>{agent.dueSoon > 0 ? <span className="pill warning">{agent.dueSoon}</span> : agent.dueSoon}</td>
+                  <td>{agent.overdue > 0 ? <span className="pill danger">{agent.overdue}</span> : agent.overdue}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="card">
@@ -92,7 +105,7 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
-        <p className="muted small"><span className="legend created" /> created <span className="legend resolved" /> resolved</p>
+        <p className="muted small"><span className="legend created" />Created<span className="legend resolved" />Resolved</p>
       </section>
     </div>
   )

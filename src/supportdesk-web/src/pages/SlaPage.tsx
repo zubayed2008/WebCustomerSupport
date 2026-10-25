@@ -29,8 +29,13 @@ export default function SlaPage() {
 
   return (
     <div>
-      <h1>Service levels</h1>
-      {error ? <div className="alert error">{error}</div> : null}
+      <div className="page-header">
+        <div>
+          <h1>Service levels</h1>
+          <p className="page-subtitle">Response and resolution targets, business hours, and holidays.</p>
+        </div>
+      </div>
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
       <SlaPolicies policies={policies} calendars={calendars} onChanged={load} onError={setError} />
       <SlaCalendars calendars={calendars} onChanged={load} onError={setError} />
     </div>

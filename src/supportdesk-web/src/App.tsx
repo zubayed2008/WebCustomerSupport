@@ -25,9 +25,9 @@ function ProtectedRoute() {
   return <Layout />
 }
 
-function PermissionRoute({ permission }: { permission: string }) {
+function PermissionRoute({ permissions }: { permissions: string[] }) {
   const { can } = useAuth()
-  return can(permission) ? <Outlet /> : <Navigate to="/tickets" replace />
+  return permissions.some((permission) => can(permission)) ? <Outlet /> : <Navigate to="/tickets" replace />
 }
 
 function HomeRoute() {
@@ -48,10 +48,10 @@ export default function App() {
             <Route path="/tickets/:id" element={<TicketDetailPage />} />
             <Route path="/knowledge" element={<KnowledgePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route element={<PermissionRoute permission="sla.view" />}>
+            <Route element={<PermissionRoute permissions={['sla.view']} />}>
               <Route path="/sla" element={<SlaPage />} />
             </Route>
-            <Route element={<PermissionRoute permission="roles.view" />}>
+            <Route element={<PermissionRoute permissions={['roles.view', 'users.view']} />}>
               <Route path="/admin" element={<AdminPage />} />
             </Route>
           </Route>

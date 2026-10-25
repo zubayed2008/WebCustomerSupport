@@ -85,6 +85,13 @@ builder.Services.PostConfigure<CookieAuthenticationOptions>(IdentityConstants.Ap
 builder.Services.AddAuthorization();
 builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(2));
 
+// The test host shares one loopback identity across many parallel sessions, so
+// integration tests would otherwise trip the production brute-force limits.
+var isTestHost = builder.Environment.IsEnvironment("Testing");
+var globalPermitLimit = isTestHost ? 100_000 : 300;
+var authPermitLimit = isTestHost ? 10_000 : 10;
+var aiPermitLimit = isTestHost ? 10_000 : 20;
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -96,7 +103,7 @@ builder.Services.AddRateLimiter(options =>
 
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
-            PermitLimit = 300,
+            PermitLimit = globalPermitLimit,
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             AutoReplenishment = true,
@@ -105,11 +112,11 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = authPermitLimit, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
 
     options.AddPolicy("ai", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = aiPermitLimit, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
 });
 
 builder.Services.AddHealthChecks().AddDbContextCheck<SupportDeskDbContext>("database");

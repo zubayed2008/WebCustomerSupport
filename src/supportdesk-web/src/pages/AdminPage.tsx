@@ -19,28 +19,34 @@ export default function AdminPage() {
   ]
 
   const visible = tabs.filter((item) => !item.permission || can(item.permission))
+  const activeTab: Tab | undefined = visible.some((item) => item.id === tab) ? tab : visible[0]?.id
 
   return (
     <div>
-      <h1>Administration</h1>
+      <div className="page-header">
+        <div>
+          <h1>Administration</h1>
+          <p className="page-subtitle">Identity, access control, and administrative audit history.</p>
+        </div>
+      </div>
       <div className="tabs" role="tablist">
         {visible.map((item) => (
           <button
             key={item.id}
             type="button"
             role="tab"
-            aria-selected={tab === item.id}
-            className={tab === item.id ? 'tab active' : 'tab'}
+            aria-selected={activeTab === item.id}
+            className={activeTab === item.id ? 'tab active' : 'tab'}
             onClick={() => setTab(item.id)}
           >
             {item.label}
           </button>
         ))}
       </div>
-      {tab === 'users' && can('users.view') ? <AdminUsers /> : null}
-      {tab === 'roles' && can('roles.view') ? <AdminRoles /> : null}
-      {tab === 'permissions' && can('roles.view') ? <AdminPermissions /> : null}
-      {tab === 'audit' && can('audit.view') ? <AdminAudit /> : null}
+      {activeTab === 'users' && can('users.view') ? <AdminUsers /> : null}
+      {activeTab === 'roles' && can('roles.view') ? <AdminRoles /> : null}
+      {activeTab === 'permissions' && can('roles.view') ? <AdminPermissions /> : null}
+      {activeTab === 'audit' && can('audit.view') ? <AdminAudit /> : null}
     </div>
   )
 }

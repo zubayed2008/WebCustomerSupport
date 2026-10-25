@@ -32,7 +32,7 @@ export default function TicketMetadataActions({ ticket, categories, articles, on
 
   return (
     <section className="card">
-      <h2>Classification and knowledge</h2>
+      <h2>Classification</h2>
 
       {can('tickets.update-category') ? (
         <>
@@ -100,7 +100,7 @@ export default function TicketMetadataActions({ ticket, categories, articles, on
       {ticket.linkedArticles.length > 0 ? (
         <div>
           <strong>Linked articles</strong>
-          <ul>
+          <ul className="linked-list">
             {ticket.linkedArticles.map((article) => (
               <li key={article.id}>
                 {article.title}

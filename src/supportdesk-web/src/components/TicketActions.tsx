@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiRequest } from '../api/client'
 import type { Assignee, TicketDetail, TicketPriority, TicketStatus } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { formatLabel } from '../utils/format'
 
 export const allowedTransitions: Record<TicketStatus, TicketStatus[]> = {
   New: ['Open', 'PendingInternal', 'Resolved'],
@@ -53,8 +54,8 @@ export default function TicketActions({ ticket, assignees, onChanged, onError }:
           <label>
             Status
             <select value={status} onChange={(event) => setStatus(event.target.value as TicketStatus)}>
-              <option value={ticket.status}>{ticket.status} (current)</option>
-              {allowed.map((value) => <option key={value} value={value}>{value}</option>)}
+              <option value={ticket.status}>{formatLabel(ticket.status)} (current)</option>
+              {allowed.map((value) => <option key={value} value={value}>{formatLabel(value)}</option>)}
             </select>
           </label>
           <button

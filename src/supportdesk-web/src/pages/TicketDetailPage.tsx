@@ -9,6 +9,7 @@ import TicketAttachments from '../components/TicketAttachments'
 import TicketMetadataActions from '../components/TicketMetadataActions'
 import type { Assignee, Category, KbArticleListItem, PagedResult, TicketDetail } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { formatDateTime, formatLabel } from '../utils/format'
 
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -53,13 +54,13 @@ export default function TicketDetailPage() {
   }, [can])
 
   if (loading) {
-    return <p>Loading…</p>
+    return <p className="loading">Loading ticket…</p>
   }
 
   if (!ticket) {
     return (
       <div>
-        <div className="alert error">{error ?? 'Ticket not found.'}</div>
+        <div className="alert error" role="alert">{error ?? 'Ticket not found.'}</div>
         <Link to="/tickets">Back to tickets</Link>
       </div>
     )
@@ -69,12 +70,13 @@ export default function TicketDetailPage() {
     <div className="ticket-detail">
       <div className="page-header">
         <div>
-          <Link to="/tickets" className="muted">← Back to tickets</Link>
-          <h1>{ticket.number} — {ticket.subject}</h1>
-          <div className="row-actions wrap">
-            <span className={`pill status-${ticket.status.toLowerCase()}`}>{ticket.status}</span>
-            <span className="pill">{ticket.priority}</span>
-            {ticket.categoryName ? <span className="pill">{ticket.categoryName}</span> : null}
+          <Link to="/tickets" className="breadcrumb muted">← Back to tickets</Link>
+          <div className="ticket-number">{ticket.number}</div>
+          <h1>{ticket.subject}</h1>
+          <div className="header-badges">
+            <span className={`pill status-${ticket.status.toLowerCase()}`}>{formatLabel(ticket.status)}</span>
+            <span className={`pill priority-${ticket.priority.toLowerCase()}`}>{ticket.priority} priority</span>
+            {ticket.categoryName ? <span className="pill neutral">{ticket.categoryName}</span> : null}
             {ticket.isOverdue ? <span className="pill danger">Overdue</span> : null}
             {!ticket.isOverdue && ticket.isDueSoon ? <span className="pill warning">Due soon</span> : null}
             {ticket.responseBreached ? <span className="pill danger">Response breached</span> : null}
@@ -85,28 +87,41 @@ export default function TicketDetailPage() {
 
       {error ? <div className="alert error" role="alert">{error}</div> : null}
 
-      <section className="card">
-        <h2>Request</h2>
-        <p className="preserve-lines">{ticket.description}</p>
-        <dl className="meta-grid">
-          <div><dt>Requester</dt><dd>{ticket.requesterName}</dd></div>
-          <div><dt>Assignee</dt><dd>{ticket.assigneeName ?? 'Unassigned'}</dd></div>
-          <div><dt>Created</dt><dd>{new Date(ticket.createdAt).toLocaleString()}</dd></div>
-          <div><dt>First response due</dt><dd>{ticket.firstResponseDueAt ? new Date(ticket.firstResponseDueAt).toLocaleString() : 'Not set'}</dd></div>
-          <div><dt>Resolution due</dt><dd>{ticket.resolutionDueAt ? new Date(ticket.resolutionDueAt).toLocaleString() : 'Not set'}</dd></div>
-          <div><dt>Paused for customer</dt><dd>{ticket.pausedMinutes} business minutes</dd></div>
-        </dl>
-      </section>
+      <div className="ticket-layout">
+        <div className="ticket-main">
+          <section className="card">
+            <h2>Request</h2>
+            <p className="request-body preserve-lines">{ticket.description}</p>
+            {ticket.tags.length > 0 ? (
+              <div className="tag-list">
+                {ticket.tags.map((tag) => <span key={tag} className="pill neutral">{tag}</span>)}
+              </div>
+            ) : null}
+          </section>
 
-      <div className="two-column">
-        <TicketActions key={`workflow-${ticket.updatedAt}`} ticket={ticket} assignees={assignees} onChanged={load} onError={setError} />
-        <TicketMetadataActions key={`metadata-${ticket.updatedAt}`} ticket={ticket} categories={categories} articles={articles} onChanged={load} onError={setError} />
+          <CommentSection ticket={ticket} onChanged={load} onError={setError} />
+          {can('tickets.attach') ? <TicketAttachments ticket={ticket} onChanged={load} onError={setError} /> : null}
+          <AiPanel ticketId={ticket.id} />
+          <ActivityTimeline activities={ticket.activities} />
+        </div>
+
+        <aside className="ticket-aside" aria-label="Ticket properties">
+          <section className="card">
+            <h2>Details</h2>
+            <dl className="meta-grid">
+              <div><dt>Requester</dt><dd>{ticket.requesterName}</dd></div>
+              <div><dt>Assignee</dt><dd>{ticket.assigneeName ?? 'Unassigned'}</dd></div>
+              <div><dt>Created</dt><dd>{formatDateTime(ticket.createdAt)}</dd></div>
+              <div><dt>Last updated</dt><dd>{formatDateTime(ticket.updatedAt)}</dd></div>
+              <div><dt>First response due</dt><dd>{formatDateTime(ticket.firstResponseDueAt)}</dd></div>
+              <div><dt>Resolution due</dt><dd>{formatDateTime(ticket.resolutionDueAt)}</dd></div>
+              <div><dt>Paused for customer</dt><dd>{ticket.pausedMinutes} business minutes</dd></div>
+            </dl>
+          </section>
+          <TicketActions key={`workflow-${ticket.updatedAt}`} ticket={ticket} assignees={assignees} onChanged={load} onError={setError} />
+          <TicketMetadataActions key={`metadata-${ticket.updatedAt}`} ticket={ticket} categories={categories} articles={articles} onChanged={load} onError={setError} />
+        </aside>
       </div>
-
-      <CommentSection ticket={ticket} onChanged={load} onError={setError} />
-      {can('tickets.attach') ? <TicketAttachments ticket={ticket} onChanged={load} onError={setError} /> : null}
-      <AiPanel ticketId={ticket.id} />
-      <ActivityTimeline activities={ticket.activities} />
     </div>
   )
 }

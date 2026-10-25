@@ -1,6 +1,7 @@
 import { apiRequest } from '../api/client'
 import type { KbArticle } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { formatDate } from '../utils/format'
 
 interface Props {
   article: KbArticle | null
@@ -31,10 +32,18 @@ export default function KnowledgeDetail({ article, onChanged, onError }: Props) 
 
   return (
     <section className="card">
-      <h2>Article detail</h2>
-      <h3>{article.title}</h3>
-      <p className="muted">{article.summary}</p>
-      <p className="preserve-lines">{article.body}</p>
+      <div className="card-header">
+        <div>
+          <h2>{article.title}</h2>
+          <p className="card-description">{article.authorName} · Updated {formatDate(article.updatedAt)}</p>
+        </div>
+        <div className="row-actions">
+          <span className={`pill status-${article.status.toLowerCase()}`}>{article.status}</span>
+          <span className="pill neutral">{article.visibility}</span>
+        </div>
+      </div>
+      {article.summary ? <p className="muted">{article.summary}</p> : null}
+      <p className="request-body preserve-lines">{article.body}</p>
       <div className="row-actions wrap">
         {can('knowledge.publish') && article.status !== 'Published' ? (
           <button type="button" className="button primary" onClick={() => action('publish')}>Publish</button>

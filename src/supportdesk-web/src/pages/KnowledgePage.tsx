@@ -3,6 +3,7 @@ import { apiRequest } from '../api/client'
 import KnowledgeDetail from '../components/KnowledgeDetail'
 import type { KbArticle, KbArticleListItem, KbArticleStatus, KbVisibility, PagedResult } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { formatDate } from '../utils/format'
 
 export default function KnowledgePage() {
   const { can } = useAuth()
@@ -63,7 +64,10 @@ export default function KnowledgePage() {
   return (
     <div>
       <div className="page-header">
-        <h1>Knowledge base</h1>
+        <div>
+          <h1>Knowledge base</h1>
+          <p className="page-subtitle">Reusable answers and internal guidance for your team.</p>
+        </div>
         {can('knowledge.create') ? (
           <button type="button" className="button primary" onClick={() => setShowCreate((value) => !value)}>
             {showCreate ? 'Cancel' : 'New article'}
@@ -123,16 +127,17 @@ export default function KnowledgePage() {
           <h2>Articles</h2>
           <ul className="list">
             {items.map((article) => (
-              <li key={article.id} className="list-item">
+              <li key={article.id} className={selected?.id === article.id ? 'list-item selected' : 'list-item'}>
                 <div>
                   <button type="button" className="link-button" onClick={() => open(article.id)}>{article.title}</button>
                   <div className="muted small">
-                    {article.status} · {article.visibility} · {article.authorName} · {new Date(article.updatedAt).toLocaleDateString()}
+                    {article.visibility} · {article.authorName} · {formatDate(article.updatedAt)}
                   </div>
                 </div>
+                <span className={`pill status-${article.status.toLowerCase()}`}>{article.status}</span>
               </li>
             ))}
-            {items.length === 0 ? <li className="muted">No articles found.</li> : null}
+            {items.length === 0 ? <li className="empty-state">No articles found.</li> : null}
           </ul>
         </section>
         <KnowledgeDetail

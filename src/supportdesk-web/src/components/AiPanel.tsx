@@ -59,8 +59,12 @@ export default function AiPanel({ ticketId }: { ticketId: string }) {
   }
 
   const feedback = async (id: string, rating: number) => {
-    await apiRequest(`/ai-suggestions/${id}/feedback`, { method: 'POST', body: { rating, comment: null } })
-    await load()
+    try {
+      await apiRequest(`/ai-suggestions/${id}/feedback`, { method: 'POST', body: { rating, comment: null } })
+      await load()
+    } catch (exception) {
+      setError(exception instanceof Error ? exception.message : 'Unable to save feedback.')
+    }
   }
 
   const copyDraft = async (text: string) => {
@@ -73,9 +77,11 @@ export default function AiPanel({ ticketId }: { ticketId: string }) {
 
   return (
     <section className="card ai-panel">
-      <div className="page-header">
-        <h2>AI assistance</h2>
-        <span className="muted small">Human review required before sending</span>
+      <div className="card-header">
+        <div>
+          <h2>AI assistance</h2>
+          <p className="card-description">Human review required before sending</p>
+        </div>
       </div>
       {error ? <div className="alert error">{error}</div> : null}
       <div className="row-actions wrap">
@@ -125,7 +131,7 @@ export default function AiPanel({ ticketId }: { ticketId: string }) {
             ) : null}
           </li>
         ))}
-        {suggestions.length === 0 ? <li className="muted">No suggestions requested yet.</li> : null}
+        {suggestions.length === 0 ? <li className="empty-state">No suggestions requested yet.</li> : null}
       </ul>
     </section>
   )
