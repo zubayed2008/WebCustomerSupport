@@ -1,7 +1,8 @@
 # AI-Powered Customer Support Desk — Implementation Plan
 
-**Status:** Proposed  
-**Product plan:** [Project plan](project.md)
+**Status:** Phases 0-5 implemented in this repository  
+**Product plan:** [Project plan](project.md)  
+**Operations:** [Runbook](docs/operations.md) · [Security notes](SECURITY.md) · [API summary](docs/api.md)
 
 ## 1. Architecture Decisions
 
@@ -213,7 +214,15 @@ A public agent reply records first response once. Resolution time pauses only in
 
 **Exit gate:** A deployed release passes the critical-path suite, backup restoration and demo reset are proven, known limitations are documented, and the client demo works without manual database edits.
 
-## 6. Post-MVP Backlog
+## 6. Verification Evidence
+
+- `dotnet build SupportDesk.slnx` succeeds for all seven projects.
+- Unit tests cover ticket transitions, SLA business-hours calculations (weekend, holiday, DST), permission catalog integrity, and upload validation.
+- PostgreSQL integration tests use a disposable Testcontainers database, apply real migrations, seed data, perform the anti-forgery handshake, and verify customer isolation, internal-note filtering, dynamic role grants, workflow transitions, upload rejection, and knowledge publication.
+- `docker compose up --build -d` builds and starts PostgreSQL, API, worker, and web; the API and web health checks report healthy.
+- The knowledge-base search is backed by a PostgreSQL GIN full-text index created in the migration.
+
+## 7. Post-MVP Backlog
 
 Prioritize only after client feedback: real inbound email threading, multi-tenant isolation, satisfaction surveys, customer-organization accounts, advanced custom SLAs, localization, semantic-search improvements, live chat, additional channels, and data-warehouse exports. Do not let these delay the reliable core workflow.
 

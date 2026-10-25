@@ -1,0 +1,43 @@
+# Build output
+bin/
+obj/
+dist/
+out/
+publish/
+artifacts/
+
+# IDE and user settings
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+
+# Logs and local data
+*.log
+logs/
+storage/
+data/
+*.tmp
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+
+# Test output
+TestResults/
+coverage/
+*.trx
+*.coverage
+
+# Node
+node_modules/
+.vite/
+npm-debug.log*
+
+# OS files
+Thumbs.db
+.DS_Store

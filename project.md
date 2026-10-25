@@ -1,6 +1,6 @@
 # AI-Powered Customer Support Desk — Project Plan
 
-**Status:** Proposed  
+**Status:** Phase 0-5 implemented, Phase 6 hardening recommended before production  
 **Delivery target:** Client-demonstrable MVP  
 **Related document:** [Implementation plan](implementation-plan.md)
 

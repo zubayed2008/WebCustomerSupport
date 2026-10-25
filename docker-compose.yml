@@ -1,0 +1,107 @@
+name: supportdesk
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-supportdesk}
+      POSTGRES_USER: ${POSTGRES_USER:-supportdesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    networks:
+      - supportdesk
+
+  api:
+    build:
+      context: .
+      dockerfile: src/SupportDesk.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__SupportDesk: Host=postgres;Port=5432;Database=${POSTGRES_DB:-supportdesk};Username=${POSTGRES_USER:-supportdesk};Password=${POSTGRES_PASSWORD}
+      Database__AutoMigrate: ${SUPPORTDESK_AUTO_MIGRATE:-true}
+      Seed__AdminEmail: ${SUPPORTDESK_ADMIN_EMAIL}
+      Seed__AdminPassword: ${SUPPORTDESK_ADMIN_PASSWORD}
+      Seed__DemoPassword: ${SUPPORTDESK_DEMO_PASSWORD}
+      Auth__RequireSecureCookies: "false"
+      Security__EnableHsts: "false"
+      Security__TrustForwardedHeaders: "true"
+      PublicUrl: ${SUPPORTDESK_PUBLIC_URL:-http://localhost:8080}
+      FileStorage__RootPath: /var/lib/supportdesk/files
+      Ai__Provider: ${SUPPORTDESK_AI_PROVIDER:-Fake}
+      Ai__ApiKey: ${SUPPORTDESK_AI_API_KEY}
+      Ai__Model: ${SUPPORTDESK_AI_MODEL}
+      Ai__BaseUrl: ${SUPPORTDESK_AI_BASE_URL}
+      Email__Mode: Logging
+    volumes:
+      - file-storage:/var/lib/supportdesk/files
+      - data-protection:/home/app/.aspnet/DataProtection-Keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - supportdesk
+
+  worker:
+    build:
+      context: .
+      dockerfile: src/SupportDesk.Worker/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      ConnectionStrings__SupportDesk: Host=postgres;Port=5432;Database=${POSTGRES_DB:-supportdesk};Username=${POSTGRES_USER:-supportdesk};Password=${POSTGRES_PASSWORD}
+      PublicUrl: ${SUPPORTDESK_PUBLIC_URL:-http://localhost:8080}
+      FileStorage__RootPath: /var/lib/supportdesk/files
+      Ai__Provider: ${SUPPORTDESK_AI_PROVIDER:-Fake}
+      Ai__ApiKey: ${SUPPORTDESK_AI_API_KEY}
+      Ai__Model: ${SUPPORTDESK_AI_MODEL}
+      Ai__BaseUrl: ${SUPPORTDESK_AI_BASE_URL}
+      Email__Mode: Logging
+    volumes:
+      - file-storage:/var/lib/supportdesk/files
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - supportdesk
+
+  web:
+    build:
+      context: .
+      dockerfile: src/supportdesk-web/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - supportdesk
+
+volumes:
+  postgres-data:
+  file-storage:
+  data-protection:
+
+networks:
+  supportdesk:
+    driver: bridge

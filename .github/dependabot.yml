@@ -1,0 +1,38 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      microsoft-extensions:
+        patterns:
+          - "Microsoft.Extensions.*"
+          - "Microsoft.EntityFrameworkCore*"
+
+  - package-ecosystem: npm
+    directory: /src/supportdesk-web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /src/SupportDesk.Api
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /src/SupportDesk.Worker
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /src/supportdesk-web
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
