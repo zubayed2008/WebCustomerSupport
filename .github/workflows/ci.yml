@@ -30,7 +30,7 @@ jobs:
         run: dotnet test tests/SupportDesk.UnitTests/SupportDesk.UnitTests.csproj --no-build --configuration Release --logger "trx;LogFileName=unit.trx"
       - name: Integration tests
         run: dotnet test tests/SupportDesk.IntegrationTests/SupportDesk.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=integration.trx"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-test-results
