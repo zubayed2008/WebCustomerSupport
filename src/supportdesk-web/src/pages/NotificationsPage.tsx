@@ -44,13 +44,19 @@ export default function NotificationsPage() {
           <h1>Notifications</h1>
           <p className="page-subtitle">Assignments, replies, and service-level alerts for your account.</p>
         </div>
-        <button type="button" className="button" onClick={() => void run(() => apiRequest('/notifications/read-all', { method: 'POST' }))}>
+        <button
+          type="button"
+          className="button"
+          disabled={items.length === 0 || items.every((item) => item.isRead)}
+          onClick={() => void run(() => apiRequest('/notifications/read-all', { method: 'POST' }))}
+        >
           Mark all read
         </button>
       </div>
       {error ? <div className="alert error" role="alert">{error}</div> : null}
       {loading ? <p className="loading">Loading notifications…</p> : null}
-      <ul className="list">
+      <section className="card">
+        <ul className="list">
         {items.map((item) => (
           <li key={item.id} className={item.isRead ? 'list-item' : 'list-item unread'}>
             <div>
@@ -68,8 +74,9 @@ export default function NotificationsPage() {
             </div>
           </li>
         ))}
-        {!loading && items.length === 0 ? <li className="empty-state">No notifications yet.</li> : null}
-      </ul>
+        {!loading && items.length === 0 ? <li className="empty-state">No notifications yet. Assignment and reply alerts will appear here.</li> : null}
+        </ul>
+      </section>
     </div>
   )
 }

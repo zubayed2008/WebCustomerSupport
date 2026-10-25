@@ -53,9 +53,6 @@ export default function TicketsPage() {
           <h1>{can('tickets.view.all') ? 'Ticket queue' : 'My tickets'}</h1>
           <p className="page-subtitle">Track, prioritize, and resolve customer requests.</p>
         </div>
-        <Link className="button primary" to="/tickets/new">
-          New ticket
-        </Link>
       </div>
 
       <form

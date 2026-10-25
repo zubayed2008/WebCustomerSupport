@@ -196,7 +196,10 @@ code { background: var(--surface-subtle); border: 1px solid var(--border); borde
 
 .filters, .form-row, .inline-form { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
 .filters { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 1rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+.filters > label { min-width: 150px; }
+.filters > label:first-of-type { flex: 1 1 260px; }
 .form { display: flex; flex-direction: column; gap: 0.85rem; }
+.form > .button { align-self: flex-start; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 0.85rem; align-items: end; }
 label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8rem; font-weight: 600; color: #3d4c63; min-width: 0; }
 input, select, textarea {
@@ -366,6 +369,9 @@ legend { font-size: 0.78rem; font-weight: 650; color: var(--muted); padding: 0 0
   .sidebar nav a.active { box-shadow: none; }
   .sidebar-section, .sidebar-footer { display: none; }
   .topbar { padding: 0.65rem 1rem; flex-wrap: wrap; }
+  .topbar-user { min-width: 0; }
+  .topbar-user-roles { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
   .content { padding: 1rem; }
   .page-header { flex-direction: column; align-items: stretch; }
   .page-header .button { align-self: flex-start; }

@@ -44,6 +44,12 @@ export default function TicketActions({ ticket, assignees, onChanged, onError }:
   const allowed = allowedTransitions[ticket.status] ?? []
   const canChangeStatus = can('tickets.update-status')
   const canReopen = !canChangeStatus && can('tickets.reply') && (ticket.status === 'Resolved' || ticket.status === 'Closed')
+  const canChangePriority = can('tickets.update-priority')
+  const canAssign = can('tickets.assign')
+
+  if (!canChangeStatus && !canReopen && !canChangePriority && !canAssign) {
+    return null
+  }
 
   return (
     <section className="card">
@@ -78,7 +84,7 @@ export default function TicketActions({ ticket, assignees, onChanged, onError }:
         </button>
       ) : null}
 
-      {can('tickets.update-priority') ? (
+      {canChangePriority ? (
         <div className="form-row">
           <label>
             Priority
@@ -97,7 +103,7 @@ export default function TicketActions({ ticket, assignees, onChanged, onError }:
         </div>
       ) : null}
 
-      {can('tickets.assign') ? (
+      {canAssign ? (
         <div className="form-row">
           <label>
             Assignee

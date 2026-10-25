@@ -21,7 +21,8 @@ export default function Modal({ title, description, onClose, children }: ModalPr
     document.addEventListener('keydown', handleKeyDown)
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    containerRef.current?.querySelector<HTMLElement>('input, select, textarea, button')?.focus()
+    const focusTarget = containerRef.current?.querySelector<HTMLElement>('input, select, textarea')
+    ;(focusTarget ?? containerRef.current?.querySelector<HTMLElement>('button'))?.focus()
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)

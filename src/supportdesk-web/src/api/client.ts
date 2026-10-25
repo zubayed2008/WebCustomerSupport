@@ -65,6 +65,23 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (response.status === 401) {
+    // Sign-in failures (wrong password, temporary lockout) return a 401 with a
+    // ProblemDetails body. Read it before assuming the session simply expired so
+    // the specific reason reaches the user.
+    let detail: string | null = null
+    let title: string | null = null
+    try {
+      const problem = (await response.json()) as { title?: string; detail?: string }
+      title = problem.title ?? null
+      detail = problem.detail ?? null
+    } catch {
+      // A 401 without a body means the authentication cookie is no longer valid.
+    }
+
+    if (detail || title) {
+      throw new ApiError(response.status, detail ?? title ?? 'Sign in failed.', detail)
+    }
+
     window.dispatchEvent(new CustomEvent('supportdesk:unauthenticated'))
     throw new ApiError(401, 'Your session has expired. Sign in again.')
   }
