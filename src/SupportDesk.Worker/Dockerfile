@@ -14,7 +14,7 @@ RUN dotnet publish src/SupportDesk.Worker/SupportDesk.Worker.csproj \
     --output /app/publish \
     /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS final
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
